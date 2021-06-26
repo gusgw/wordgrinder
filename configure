@@ -307,14 +307,6 @@ add_configuration() {
         add SRCS src/c/emu/minizip/unzip.c
     fi
 
-    # This must go *after* any other include or library path configuration,
-    # to make sure any builtin headers get found before the system ones.
-
-    if [ "$PACKAGES" != "" ]; then
-        add CFLAGS $(pkg-config --cflags $PACKAGES)
-        add LDFLAGS $(pkg-config --libs $PACKAGES)
-    fi
-
     # Main core
 
     add SRCS src/c/utils.c
@@ -361,7 +353,26 @@ add_configuration() {
                 add LDFLAGS $(sdl2-config --libs) $(pkg-config --libs SDL2_ttf)
             fi
             ;;
+
+        glfw)
+            add SRCS src/c/arch/glfw/dpy.c
+            add SRCS src/c/arch/glfw/glyphcache.c
+            add PACKAGES glfw3 glesv1_cm
+            ;;
+
+        *)
+            echo "Unknown frontend!"
+            exit 1
+            ;;
     esac
+
+    # This must go *after* any other include or library path configuration,
+    # to make sure any builtin headers get found before the system ones.
+
+    if [ "$PACKAGES" != "" ]; then
+        add CFLAGS $(pkg-config --cflags $PACKAGES)
+        add LDFLAGS $(pkg-config --libs $PACKAGES)
+    fi
 
     local objs
     for f in $SRCS; do
@@ -482,6 +493,7 @@ while [ $# != 0 ]; do
         minizip=*)      BUILTIN_MINIZIP=n;      add PACKAGES ${1#*=} ;;
         wincon)         set_frontend wincon ;;
         sdl)            set_frontend sdl ;;
+        glfw)           set_frontend glfw ;;
         ncurses)        set_frontend ncurses;   add PACKAGES ncursesw ;;
         ncurses=*)      set_frontend ncurses;   add PACKAGES ${1#*=} ;;
         test)           TEST=y ;;
